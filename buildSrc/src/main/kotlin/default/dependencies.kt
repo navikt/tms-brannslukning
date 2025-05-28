@@ -116,7 +116,7 @@ interface KotliQueryDefaults: DependencyGroup {
 }
 
 object KtorDefaults {
-    val version get() = "3.1.3"
+    val version get() = "3.0.3"
     val groupId get() = "io.ktor"
 
     interface ServerDefaults: DependencyGroup {
