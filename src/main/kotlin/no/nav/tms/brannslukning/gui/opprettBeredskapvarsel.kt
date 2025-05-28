@@ -31,6 +31,8 @@ fun Route.opprettBeredskapvarsel(alertRepository: AlertRepository) {
             }
 
             post {
+                log.info { "Content-length: ${call.request.contentLength()}" }
+                log.info { "Content-type: ${call.request.contentLength()}" }
                 val parameters = call.receiveParameters()
                 val hendelse = call.tmpHendelseOrNull() ?: TmpBeredskapsvarsel(
                     title = parameters.getFormFieldValue(FormInputField.TITLE),
