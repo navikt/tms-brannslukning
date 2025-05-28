@@ -1,6 +1,7 @@
 package no.nav.tms.brannslukning.gui
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -30,6 +31,8 @@ fun Route.opprettBeredskapvarsel(alertRepository: AlertRepository) {
             }
 
             post {
+                log.info { "headers names: ${call.request.headers.names()}" }
+                log.info { "content-type: ${call.request.headers[HttpHeaders.ContentType]}" }
                 val parameters = call.receiveParameters()
                 val hendelse = call.tmpHendelseOrNull() ?: TmpBeredskapsvarsel(
                     title = parameters.getFormFieldValue(FormInputField.TITLE),
