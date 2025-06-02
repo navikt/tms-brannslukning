@@ -1,14 +1,12 @@
 package no.nav.tms.brannslukning.gui
 
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import no.nav.tms.brannslukning.alert.*
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-internal object BeredskapvarselCache {
+object BeredskapvarselCache {
 
 
     private val cache: Cache<String, TmpBeredskapsvarsel> = Caffeine.newBuilder()
@@ -26,9 +24,7 @@ internal object BeredskapvarselCache {
         cache.invalidate(hendelseId)
     }
 
-    fun tmpClose(id: String) {
-        cache.invalidate(id)
-    }
+    fun clearCache() = cache.invalidateAll()
 }
 
 abstract class Beredskapsvarsel(

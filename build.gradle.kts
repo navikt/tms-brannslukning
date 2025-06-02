@@ -55,9 +55,11 @@ dependencies {
     testImplementation(JunitPlatform.launcher)
     testImplementation(JunitJupiter.api)
     testImplementation(Mockk.mockk)
+    testImplementation(Ktor.Test.serverTestHost)
     testImplementation(TestContainers.postgresql)
     testImplementation(Kotest.runnerJunit5)
     testImplementation(Kotest.assertionsCore)
+    testImplementation(TmsKtorTokenSupport.azureValidationMock)
 }
 
 application {

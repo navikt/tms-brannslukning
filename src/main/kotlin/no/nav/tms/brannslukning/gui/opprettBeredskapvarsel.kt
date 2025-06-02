@@ -41,7 +41,7 @@ fun Route.opprettBeredskapvarsel(alertRepository: AlertRepository) {
             }
         }
 
-        route("{varselId}") {
+        route("{hendelseId}") {
             route(teksterEndpoint) {
                 get {
                     val hendelse = call.tmpHendelse()
@@ -133,7 +133,7 @@ fun Route.opprettBeredskapvarsel(alertRepository: AlertRepository) {
             }
 
             get(kvitteringEndpoint) {
-                val hendelse = call.parameters["varselId"]?.let {
+                val hendelse = call.parameters["hendelseId"]?.let {
                     alertRepository.fetchHendelse(it)
                 } ?: throw IllegalArgumentException("Hendelse finnes ikke")
 
