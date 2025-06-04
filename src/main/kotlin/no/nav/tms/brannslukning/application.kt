@@ -25,17 +25,21 @@ import java.util.*
 fun main() {
     val alertRepository = AlertRepository(PostgresDatabase())
 
-    if (Environment.isDevMode)
+    if (Environment.isDevMode) {
         startDevServer(alertRepository)
-    else
+    } else {
         startKafkaApplication(alertRepository)
-
+    }
 }
 
 private fun startDevServer(alertRepository: AlertRepository) {
     embeddedServer(
         Netty,
-        port = getEnvVarAsInt("PORT", 8081),
+        configure = {
+            connector {
+                port = 8080
+            }
+        },
         module = {
             gui(alertRepository)
             monitor.subscribe(ApplicationStarted) {
@@ -48,7 +52,8 @@ private fun startDevServer(alertRepository: AlertRepository) {
 private fun startKafkaApplication(alertRepository: AlertRepository) {
     val environment = Environment()
 
-    val kafkaProducer = initializeKafkaProducer(environment)
+
+    val kafkaProducer = initializeKafkaProducer()
     val varselPusher = VarselPusher(
         alertRepository = alertRepository,
         leaderElection = PodLeaderElection(),
@@ -84,7 +89,7 @@ private fun startKafkaApplication(alertRepository: AlertRepository) {
     }.start()
 }
 
-private fun initializeKafkaProducer(environment: Environment) = KafkaProducer<String, String>(
+private fun initializeKafkaProducer(environment: KafkaEnvironment = KafkaEnvironment()) = KafkaProducer<String, String>(
     Properties().apply {
         put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, environment.kafkaBrokers)
         put(

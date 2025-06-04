@@ -15,7 +15,7 @@
         </triggeringPolicy>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
     </appender>
-    <root level="INFO">
+    <root level="DEBUG">
         <appender-ref ref="stdout_json"/>
     </root>
     <logger name="secureLog" level="INFO" additivity="false">

@@ -8,9 +8,9 @@ services:
     ports:
       - "5432:5432"
   mock-oauth2-server:
-    image: ghcr.io/navikt/mock-oauth2-server:1.0.0
+    image: ghcr.io/navikt/mock-oauth2-server:2.1.8
     ports:
-      - "8080:8080"
+      - "8088:8080"
     environment:
       JSON_CONFIG: |
         {
@@ -21,12 +21,14 @@ services:
               "requestMappings": [
                 {
                   "requestParam": "grant_type",
+                  "match": ".*",
                   "claims": {
-                    "aud": ["tms-varsel-admin"],
+                    "aud": ["tms-brannslukning"],
                     "email" : "rannveig@varsel.admin",
                     "preferred_username" : "rannveig@varsel.admin",
-                    "name": "Rannveig Varsel Admin",
-                    "oid": "oid"
+                    "name": "Rannveig Beredskapsvarsel",
+                    "oid": "oid",
+                    "sub": "sub"
                   }
                 }
               ]
@@ -43,17 +45,19 @@ services:
     ports:
       - "3000:3000"
     command: >
-      --openid.client-id=tms-varsel-admin
-      --openid.well-known-url=http://host.docker.internal:8080/issueissue/.well-known/openid-configuration
+      --openid.client-id=tms-brannslukning
+      --openid.well-known-url=http://host.docker.internal:8088/issueissue/.well-known/openid-configuration
       --ingress=http://localhost:3000
       --bind-address=0.0.0.0:3000
-      --upstream-host=host.docker.internal:8081
+      --upstream-host=host.docker.internal:8080
       --redis.address=redis:6379
       --redis.tls=false
-      --log-level=debug
+      --log-level=info
       --log-format=text
       --auto-login=true
     restart: on-failure
+    extra_hosts:
+      - localhost:host-gateway
     environment:
       WONDERWALL_OPENID_CLIENT_JWK: >
         {
