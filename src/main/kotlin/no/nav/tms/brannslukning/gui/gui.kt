@@ -13,19 +13,32 @@ import no.nav.tms.brannslukning.alert.AlertRepository
 import no.nav.tms.token.support.azure.validation.AzurePrincipal
 import no.nav.tms.token.support.azure.validation.azure
 
-fun Application.gui(alertRepository: AlertRepository) {
+fun Application.gui(
+    alertRepository: AlertRepository,
+    authInstaller: Application.() -> Unit = {
+        authentication {
+            azure {
+                setAsDefault = true
+            }
+        }
+    }
+) {
 
     val log = KotlinLogging.logger { }
+    val secureLog = KotlinLogging.logger("secureLog")
+
+    authInstaller()
 
     install(StatusPages) {
         status(HttpStatusCode.NotFound) { call, status ->
             call.respondText(text = "404: Page Not Found", status = status)
         }
         exception<Throwable> { call, cause ->
-            log.error(cause) { "Ukjent feil" }
             when (cause) {
-                is BadFileContent ->
-                    call.respondHtmlContent("Feil i identfil", true) {
+                is BadFileContent -> {
+                    log.error { "Mottok feil i fil" }
+                    secureLog.error(cause) { "Mottok feil i fil" }
+                    call.respondHtmlContent("Feil i identfil", true, HttpStatusCode.BadRequest) {
                         p {
                             +cause.message
                         }
@@ -34,9 +47,13 @@ fun Application.gui(alertRepository: AlertRepository) {
                             +"Tilbake"
                         }
                     }
+                }
 
-                is BadInputException ->
-                    call.respondHtmlContent("Feil i tekster", true) {
+
+                is BadInputException -> {
+                    log.error { "Mottok feil i input" }
+                    secureLog.error(cause) { "Mottok feil i input" }
+                    call.respondHtmlContent("Feil i tekster", true, HttpStatusCode.BadRequest) {
                         p {
                             +cause.message
                             cause.explanation.forEach { explanation ->
@@ -48,10 +65,12 @@ fun Application.gui(alertRepository: AlertRepository) {
                             +"Tilbake"
                         }
                     }
+                }
 
-
-                is HendelseNotFoundException ->
-                    call.respondHtmlContent("Hendelse ikke funnet", true) {
+                is HendelseNotFoundException -> {
+                    log.error { "Fant ikke hendelse" }
+                    secureLog.error(cause) { "Fant ikke hendelse" }
+                    call.respondHtmlContent("Hendelse ikke funnet", true, HttpStatusCode.NotFound) {
                         p {
                             +"Hendelsen du leter etter finnes ikke"
                         }
@@ -60,9 +79,12 @@ fun Application.gui(alertRepository: AlertRepository) {
                             +"Tilbake"
                         }
                     }
+                }
 
-                else ->
-                    call.respondHtmlContent("Feil", true) {
+                else -> {
+                    log.error { "Ukjent feil" }
+                    secureLog.error(cause) { "Ukjent feil" }
+                    call.respondHtmlContent("Feil", true, HttpStatusCode.InternalServerError) {
                         p { +"Oops..Nå ble det noe feil" }
                         p { +"${cause.message}" }
                         img {
@@ -72,18 +94,16 @@ fun Application.gui(alertRepository: AlertRepository) {
                             title = "500-cat loves you!"
                         }
                     }
+                }
             }
-        }
-    }
-
-    authentication {
-        azure {
-            setAsDefault = true
         }
     }
 
     routing {
         meta()
+        get("debug") {
+            call.respond(call.request.headers[HttpHeaders.Authorization] ?: "empty")
+        }
         authenticate {
             startPage(alertRepository)
             opprettBeredskapvarsel(alertRepository)

@@ -43,7 +43,7 @@ fun Route.detaljerBeredskapvarsel(alertRepository: AlertRepository) {
             val hendelse =
                 alertRepository.fetchHendelse(id) ?: throw IllegalArgumentException("Fant ikke hendelse med id $id")
             alertRepository.endAlert(hendelse.id, call.user)
-            BeredskapvarselCache.tmpClose(hendelse.id)
+            BeredskapvarselCache.invalidateHendelse(hendelse.id)
 
             call.respondHtmlContent("Hendelse avsluttet", false) {
                 h1 { +"Hendelse avsluttet" }

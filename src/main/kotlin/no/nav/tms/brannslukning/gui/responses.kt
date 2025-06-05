@@ -92,18 +92,19 @@ fun MAIN.cancelAndGoBackButtons(previousUrl: String? = null) {
 }
 
 suspend fun ApplicationCall.respondSeeOther(endpoint: String) {
-    response.headers.append(HttpHeaders.Location, "${request.headers["Origin"]}/$endpoint")
+    response.headers.append(HttpHeaders.Location, "/$endpoint")
     respond(HttpStatusCode.SeeOther)
 }
 
 suspend fun ApplicationCall.respondHtmlContent(
     title: String,
     fireIsActive: Boolean,
+    statusCode: HttpStatusCode = HttpStatusCode.OK,
     wide: Boolean = false,
     builder: MAIN.() -> Unit,
 ) {
 
-    this.respondHtml {
+    this.respondHtml(statusCode) {
         head {
             lang = "nb"
             title(title)
@@ -137,7 +138,7 @@ suspend fun ApplicationCall.respondHtmlContent(
     }
 }
 
-fun ApplicationCall.tmpHendelse(): TmpBeredskapsvarsel = parameters["varselId"]?.let {
+fun ApplicationCall.tmpHendelse(): TmpBeredskapsvarsel = parameters["hendelseId"]?.let {
     BeredskapvarselCache.getHendelse(it)
 } ?: throw IllegalArgumentException("Ukjent hendelse")
 
