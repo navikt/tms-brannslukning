@@ -101,9 +101,6 @@ fun Application.gui(
 
     routing {
         meta()
-        get("debug") {
-            call.respond(call.request.headers[HttpHeaders.Authorization] ?: "empty")
-        }
         authenticate {
             startPage(alertRepository)
             opprettBeredskapvarsel(alertRepository)
