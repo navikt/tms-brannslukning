@@ -3,17 +3,14 @@ package no.nav.tms.brannslukning.alert
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.mockk.clearMocks
 import io.mockk.coEvery
-import io.mockk.mockk
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotliquery.queryOf
 import no.nav.tms.brannslukning.alert.setup.database.LocalPostgresDatabase
 import no.nav.tms.brannslukning.gui.User
-import no.nav.tms.brannslukning.setup.PodLeaderElection
 import no.nav.tms.brannslukning.setup.database.*
 import no.nav.tms.varsel.action.Produsent
 import org.apache.kafka.clients.producer.MockProducer
@@ -30,7 +27,6 @@ class VarselPusherTest {
 
     private val database = LocalPostgresDatabase.cleanDb()
     private val alertRepository = AlertRepository(database)
-    private val leaderElection: PodLeaderElection = mockk()
 
     private val mockProducer = MockProducer(
         false,
@@ -42,7 +38,6 @@ class VarselPusherTest {
 
     @AfterEach
     fun cleanUp() {
-        clearMocks(leaderElection)
         mockProducer.clear()
         database.clearTables()
     }
@@ -77,8 +72,6 @@ class VarselPusherTest {
 
         database.insertRequests(alertMedMottakere)
 
-        coEvery { leaderElection.isLeader() } returns true
-
         val varselPusher = initVarselPusher(thisApp = Produsent("dev", "min-side", "tms-brannslukning"))
 
         runBlocking {
@@ -106,49 +99,6 @@ class VarselPusherTest {
                 it["produsent"]["namespace"].asText() shouldBe "min-side"
                 it["produsent"]["appnavn"].asText() shouldBe "tms-brannslukning"
             }
-    }
-
-    @Test
-    fun `does nothing when not leader`() {
-
-        val alertMedMottakere = AlertWithRecipients(
-            alertEntry = AlertEntry(
-                referenceId = UUID.randomUUID().toString(),
-                tekster = Tekster(
-                    tittel = "Alert for test",
-                    beskrivelse = "Alert for test med beskrivelse",
-                    beskjed = WebTekst(
-                        spraakkode = "nb",
-                        tekst = "Alerttekst for beskjed",
-                        link = "https://test"
-                    ),
-                    eksternTekst = EksternTekst(
-                        tittel = "Tittel for epost",
-                        tekst = "Tekst i ekstern kanal"
-                    )
-                ),
-                opprettetAv = User("TEST", "test")
-            ),
-            recipients = listOf(
-                "11111111111",
-                "22222222222",
-            )
-        )
-
-        database.insertRequests(alertMedMottakere)
-
-        coEvery { leaderElection.isLeader() } returns false
-
-        val pusher = initVarselPusher()
-
-        runBlocking {
-            pusher.start()
-            delay(2000)
-            pusher.stop()
-        }
-
-        backlogSize() shouldBe 2
-        mockProducer.history().size shouldBe 0
     }
 
     @Test
@@ -204,7 +154,6 @@ class VarselPusherTest {
         database.insertRequests(gyldigeAlerts)
         database.insertRequests(ugyldigAlert)
 
-        coEvery { leaderElection.isLeader() } returns true
 
         val varselPusher = initVarselPusher(thisApp = Produsent("dev", "min-side", "tms-brannslukning"))
 
@@ -245,7 +194,6 @@ class VarselPusherTest {
     private fun initVarselPusher(thisApp: Produsent = Produsent("cluster", "namespace", "app")) = VarselPusher(
         alertRepository = alertRepository,
         interval = Duration.ofMinutes(10),
-        leaderElection = leaderElection,
         kafkaProducer = mockProducer,
         varselTopic = "mockTopic",
         produsentOverride = thisApp

@@ -16,7 +16,6 @@ spec:
     initialDelay: 5
   secureLogs:
     enabled: true
-  leaderElection: true
   ingresses:
     - "https://beredskapsvarsel.intern.nav.no"
     - "https://beredskapsvarsel.ansatt.nav.no"

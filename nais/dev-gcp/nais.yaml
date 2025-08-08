@@ -16,7 +16,6 @@ spec:
     initialDelay: 5
   secureLogs:
     enabled: true
-  leaderElection: true
   ingresses:
     - "https://tms-brannslukning.intern.dev.nav.no"
     - "https://tms-brannslukning.ansatt.dev.nav.no"

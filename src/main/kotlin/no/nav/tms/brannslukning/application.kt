@@ -9,10 +9,8 @@ import no.nav.tms.brannslukning.alert.EksterntVarselStatusSubscriber
 import no.nav.tms.brannslukning.alert.VarselInaktivertSubscriber
 import no.nav.tms.brannslukning.alert.VarselPusher
 import no.nav.tms.brannslukning.gui.gui
-import no.nav.tms.brannslukning.setup.PodLeaderElection
 import no.nav.tms.brannslukning.setup.database.Flyway
 import no.nav.tms.brannslukning.setup.database.PostgresDatabase
-import no.nav.tms.common.util.config.IntEnvVar.getEnvVarAsInt
 import no.nav.tms.kafka.application.KafkaApplication
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -56,7 +54,6 @@ private fun startKafkaApplication(alertRepository: AlertRepository) {
     val kafkaProducer = initializeKafkaProducer()
     val varselPusher = VarselPusher(
         alertRepository = alertRepository,
-        leaderElection = PodLeaderElection(),
         kafkaProducer = kafkaProducer,
         varselTopic = environment.varselTopic
     )

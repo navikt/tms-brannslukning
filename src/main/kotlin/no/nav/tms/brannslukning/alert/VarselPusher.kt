@@ -2,7 +2,6 @@ package no.nav.tms.brannslukning.alert
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import no.nav.tms.brannslukning.setup.PeriodicJob
-import no.nav.tms.brannslukning.setup.PodLeaderElection
 import no.nav.tms.varsel.action.*
 import no.nav.tms.varsel.action.Varseltype.Beskjed
 import no.nav.tms.varsel.builder.VarselActionBuilder
@@ -13,7 +12,6 @@ import java.util.UUID
 
 class VarselPusher(
     private val alertRepository: AlertRepository,
-    private val leaderElection: PodLeaderElection,
     private val kafkaProducer: Producer<String, String>,
     private val varselTopic: String,
     private val batchSize: Int = 500,
@@ -24,11 +22,9 @@ class VarselPusher(
     private val log = KotlinLogging.logger { }
 
     override val job = initializeJob {
-        if (leaderElection.isLeader()) {
-            alertRepository
-                .nextInVarselQueue(batchSize)
-                .forEach(::processRequest)
-        }
+        alertRepository
+            .nextInVarselQueue(batchSize)
+            .forEach(::processRequest)
     }
 
     private fun processRequest(request: VarselRequest) = try {
