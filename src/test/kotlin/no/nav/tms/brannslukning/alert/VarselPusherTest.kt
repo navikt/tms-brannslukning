@@ -30,6 +30,7 @@ class VarselPusherTest {
 
     private val mockProducer = MockProducer(
         false,
+        null,
         StringSerializer(),
         StringSerializer()
     )
