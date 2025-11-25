@@ -4,7 +4,7 @@ import com.zaxxer.hikari.HikariDataSource
 import kotliquery.queryOf
 import no.nav.tms.brannslukning.setup.database.Database
 import org.flywaydb.core.Flyway
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 
 class LocalPostgresDatabase private constructor() : Database {
 
