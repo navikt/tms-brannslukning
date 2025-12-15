@@ -14,8 +14,6 @@ spec:
   readiness:
     path: /isready
     initialDelay: 5
-  secureLogs:
-    enabled: true
   ingresses:
     - "https://beredskapsvarsel.intern.nav.no"
     - "https://beredskapsvarsel.ansatt.nav.no"
@@ -31,6 +29,11 @@ spec:
     sidecar:
       enabled: true
       autoLogin: true
+  accessPolicy:
+    outbound:
+      rules:
+        - application: logging
+          namespace: nais-system
   replicas:
     min: 1
     max: 1

@@ -10,6 +10,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.html.*
 import no.nav.tms.brannslukning.alert.AlertRepository
+import no.nav.tms.common.logging.TeamLogs
 import no.nav.tms.token.support.azure.validation.AzurePrincipal
 import no.nav.tms.token.support.azure.validation.azure
 
@@ -25,7 +26,7 @@ fun Application.gui(
 ) {
 
     val log = KotlinLogging.logger { }
-    val secureLog = KotlinLogging.logger("secureLog")
+    val teamLog = TeamLogs.logger { }
 
     authInstaller()
 
@@ -37,7 +38,7 @@ fun Application.gui(
             when (cause) {
                 is BadFileContent -> {
                     log.error { "Mottok feil i fil" }
-                    secureLog.error(cause) { "Mottok feil i fil" }
+                    teamLog.error(cause) { "Mottok feil i fil" }
                     call.respondHtmlContent("Feil i identfil", true, HttpStatusCode.BadRequest) {
                         p {
                             +cause.message
@@ -52,7 +53,7 @@ fun Application.gui(
 
                 is BadInputException -> {
                     log.error { "Mottok feil i input" }
-                    secureLog.error(cause) { "Mottok feil i input" }
+                    teamLog.error(cause) { "Mottok feil i input" }
                     call.respondHtmlContent("Feil i tekster", true, HttpStatusCode.BadRequest) {
                         p {
                             +cause.message
@@ -69,7 +70,7 @@ fun Application.gui(
 
                 is HendelseNotFoundException -> {
                     log.error { "Fant ikke hendelse" }
-                    secureLog.error(cause) { "Fant ikke hendelse" }
+                    teamLog.error(cause) { "Fant ikke hendelse" }
                     call.respondHtmlContent("Hendelse ikke funnet", true, HttpStatusCode.NotFound) {
                         p {
                             +"Hendelsen du leter etter finnes ikke"
@@ -83,7 +84,7 @@ fun Application.gui(
 
                 else -> {
                     log.error { "Ukjent feil" }
-                    secureLog.error(cause) { "Ukjent feil" }
+                    teamLog.error(cause) { "Ukjent feil" }
                     call.respondHtmlContent("Feil", true, HttpStatusCode.InternalServerError) {
                         p { +"Oops..Nå ble det noe feil" }
                         p { +"${cause.message}" }

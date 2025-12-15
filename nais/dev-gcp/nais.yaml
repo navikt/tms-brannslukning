@@ -14,8 +14,6 @@ spec:
   readiness:
     path: /isready
     initialDelay: 5
-  secureLogs:
-    enabled: true
   ingresses:
     - "https://tms-brannslukning.intern.dev.nav.no"
     - "https://tms-brannslukning.ansatt.dev.nav.no"
@@ -26,6 +24,11 @@ spec:
     sidecar:
       enabled: true
       autoLogin: true
+  accessPolicy:
+    outbound:
+      rules:
+        - application: logging
+          namespace: nais-system
   replicas:
     min: 1
     max: 1
