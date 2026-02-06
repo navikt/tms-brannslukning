@@ -1,17 +1,18 @@
 package no.nav.tms.brannslukning.alert
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.mockk.clearMocks
-import io.mockk.coEvery
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotliquery.queryOf
-import no.nav.tms.brannslukning.alert.setup.database.LocalPostgresDatabase
+import no.nav.tms.brannslukning.alert.setup.database.LocalTestDatabase
 import no.nav.tms.brannslukning.gui.User
-import no.nav.tms.brannslukning.setup.database.*
+import no.nav.tms.common.postgres.JsonbHelper.jsonOrNull
+import no.nav.tms.common.postgres.JsonbHelper.toJsonb
+import no.nav.tms.common.postgres.PostgresDatabase
 import no.nav.tms.varsel.action.Produsent
 import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.common.serialization.StringSerializer
@@ -25,7 +26,7 @@ import java.util.*
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class VarselPusherTest {
 
-    private val database = LocalPostgresDatabase.cleanDb()
+    private val database = LocalTestDatabase.getInstance()
     private val alertRepository = AlertRepository(database)
 
     private val mockProducer = MockProducer(
@@ -35,12 +36,12 @@ class VarselPusherTest {
         StringSerializer()
     )
 
-    private val objectMapper = defaultObjectMapper()
+    private val objectMapper = jacksonObjectMapper()
 
     @AfterEach
     fun cleanUp() {
         mockProducer.clear()
-        database.clearTables()
+        LocalTestDatabase.resetInstance()
     }
 
     @Test
@@ -212,12 +213,11 @@ class VarselPusherTest {
         return database.singleOrNull {
             queryOf("select count(*) as antall from alert_beskjed_queue where not behandlet")
                 .map { it.int("antall") }
-                .asSingle
         } ?: 0
     }
 }
 
-private fun Database.insertRequests(requests: AlertWithRecipients) {
+private fun PostgresDatabase.insertRequests(requests: AlertWithRecipients) {
     update {
         queryOf(
             """
@@ -234,7 +234,7 @@ private fun Database.insertRequests(requests: AlertWithRecipients) {
         )
     }
 
-    batch(
+    batchUpdate(
         """
             insert into alert_beskjed_queue(alert_ref, ident, behandlet, opprettet)
             values(:alertRef, :ident, :behandlet, :opprettet)
@@ -250,7 +250,7 @@ private fun Database.insertRequests(requests: AlertWithRecipients) {
     )
 }
 
-private fun Database.getQueueEntries(): List<BeskjedQueueEntry> {
+private fun PostgresDatabase.getQueueEntries(): List<BeskjedQueueEntry> {
     return list {
         queryOf(
             "select * from alert_beskjed_queue"
@@ -264,7 +264,7 @@ private fun Database.getQueueEntries(): List<BeskjedQueueEntry> {
                 ferdigstilt = it.zonedDateTimeOrNull("ferdigstilt"),
                 feilkilde = it.jsonOrNull("feilkilde"),
             )
-        }.asList
+        }
     }
 }
 

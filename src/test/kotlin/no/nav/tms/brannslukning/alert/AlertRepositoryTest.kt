@@ -1,8 +1,9 @@
 package no.nav.tms.brannslukning.alert
 
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import no.nav.tms.brannslukning.alert.setup.database.LocalPostgresDatabase
+import no.nav.tms.brannslukning.alert.setup.database.LocalTestDatabase
 import no.nav.tms.brannslukning.alert.setup.database.setupTestAltert
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
@@ -11,17 +12,17 @@ import org.junit.jupiter.api.TestInstance
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class AlertRepositoryTest {
 
-    private val database = LocalPostgresDatabase.cleanDb()
+    private val database = LocalTestDatabase.getInstance()
     private val alertRepository = AlertRepository(database)
 
     @AfterEach
     fun cleandb() {
-        database.clearTables()
+        LocalTestDatabase.resetInstance()
     }
 
     @Test
     fun `oppdaterer leststatus`() {
-        var (testAlertRef, varsler) = setupTestAltert(alertRepository, database)
+        var (testAlertRef, varsler) = setupTestAltert(alertRepository)
 
         varsler.forEach {
             it.varselId shouldNotBe null
@@ -34,7 +35,7 @@ class AlertRepositoryTest {
 
 
         alertRepository.setVarselLest(lestVarsel.varselId)
-        varsler = database.getVarselForAlert(testAlertRef.referenceId)
+        varsler = LocalTestDatabase.getVarslerForAlert(testAlertRef.referenceId)
         varsler.find { it.lest }?.varselId shouldBe lestVarsel.varselId
         varsler.count { !it.lest } shouldBe 3
 
@@ -51,7 +52,7 @@ class AlertRepositoryTest {
 
     @Test
     fun `oppdaterer ekstern status`() {
-        val (testAlertRef, varsler) = setupTestAltert(alertRepository, database)
+        val (testAlertRef, varsler) = setupTestAltert(alertRepository)
 
         alertRepository.updateEksternStatus(varsler[0].varselId!!, "bestilt")
         alertRepository.updateEksternStatus(varsler[1].varselId!!, "sendt")
@@ -61,8 +62,6 @@ class AlertRepositoryTest {
 
         alertRepository.updateEksternStatus(varsler[3].varselId!!, "feilet")
         alertRepository.updateEksternStatus(varsler[3].varselId!!, "bestilt")
-
-
 
 
         alertRepository.varselStatus(testAlertRef.referenceId).apply {

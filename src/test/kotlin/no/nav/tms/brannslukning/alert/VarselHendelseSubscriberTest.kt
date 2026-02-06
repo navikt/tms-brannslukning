@@ -1,7 +1,7 @@
 package no.nav.tms.brannslukning.alert
 
 import io.kotest.matchers.shouldBe
-import no.nav.tms.brannslukning.alert.setup.database.LocalPostgresDatabase
+import no.nav.tms.brannslukning.alert.setup.database.LocalTestDatabase
 import no.nav.tms.brannslukning.alert.setup.database.VarselData
 import no.nav.tms.brannslukning.alert.setup.database.setupTestAltert
 import no.nav.tms.kafka.application.MessageBroadcaster
@@ -14,7 +14,7 @@ import java.util.UUID
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class VarselHendelseSubscriberTest {
-    private val database = LocalPostgresDatabase.cleanDb()
+    private val database = LocalTestDatabase.getInstance()
     private val alertRepository = AlertRepository(database)
     private val broadcaster = MessageBroadcaster(
         listOf(
@@ -31,7 +31,7 @@ class VarselHendelseSubscriberTest {
 
     @Test
     fun `plukker opp lest-hendelse`() {
-        var (testAlertRef, varsler) = setupTestAltert(alertRepository, database)
+        var (testAlertRef, varsler) = setupTestAltert(alertRepository)
         broadcaster.sendVarselInaktivert(varsler[0], varsler[1])
 
         alertRepository.varselStatus(testAlertRef.referenceId).apply {
@@ -42,7 +42,7 @@ class VarselHendelseSubscriberTest {
 
     @Test
     fun `plukker opp endring i status for eksternt varsel`() {
-        val (testAlertRef, varsler) = setupTestAltert(alertRepository, database)
+        val (testAlertRef, varsler) = setupTestAltert(alertRepository)
 
         broadcaster.sendEksterntVarselEndret("bestilt", varsler[0], varsler[1], varsler[2], varsler[3])
         broadcaster.sendEksterntVarselEndret("feilet", varsler[2])
@@ -61,7 +61,7 @@ class VarselHendelseSubscriberTest {
 
     @AfterEach
     fun cleanVarselData() {
-        database.clearTables()
+        LocalTestDatabase.resetInstance()
     }
 
 
