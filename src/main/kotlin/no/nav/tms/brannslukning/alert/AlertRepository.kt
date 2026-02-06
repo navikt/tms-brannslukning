@@ -6,20 +6,18 @@ import kotliquery.queryOf
 import no.nav.tms.brannslukning.gui.TmpBeredskapsvarsel
 import no.nav.tms.brannslukning.gui.User
 import no.nav.tms.brannslukning.gui.VarslerNotFoundException
-import no.nav.tms.brannslukning.setup.database.Database
-import no.nav.tms.brannslukning.setup.database.defaultObjectMapper
-import no.nav.tms.brannslukning.setup.database.json
-import no.nav.tms.brannslukning.setup.database.toJsonb
+import no.nav.tms.common.postgres.JsonbHelper.json
+import no.nav.tms.common.postgres.JsonbHelper.toJsonb
+import no.nav.tms.common.postgres.PostgresDatabase
 import java.time.ZoneId
 import java.time.ZonedDateTime
 
-class AlertRepository(private val database: Database) {
-
-    private val objectMapper = defaultObjectMapper()
+class AlertRepository(private val database: PostgresDatabase) {
 
     fun activeAlerts() = alerts(aktiv = true)
 
     fun inactiveAlerts() = alerts(aktiv = false)
+
     fun fetchHendelse(referenceId: String): TmpBeredskapsvarsel? {
         return database.singleOrNull {
             queryOf(
@@ -33,11 +31,11 @@ class AlertRepository(private val database: Database) {
                 """,
                 mapOf("referenceId" to referenceId)
             ).map {
-                val tekster: Tekster = it.json("tekster", objectMapper)
+                val tekster: Tekster = it.json("tekster")
 
                 TmpBeredskapsvarsel(
                     id = it.string("referenceId"),
-                    initatedBy = it.json("opprettetAv", objectMapper),
+                    initatedBy = it.json("opprettetAv"),
                     title = tekster.tittel,
                     description = tekster.beskrivelse
                 ).apply {
@@ -46,7 +44,7 @@ class AlertRepository(private val database: Database) {
                     link = tekster.beskjed.link
                     affectedCount = it.int("count")
                 }
-            }.asSingle
+            }
         }
     }
 
@@ -58,16 +56,16 @@ class AlertRepository(private val database: Database) {
                     select 
                         ah.*,
                         count(*) as mottakere,
-                        count(*) filter ( where ferdigstilt is not null) as ferdigstilte_varsler,
-                        count(*) filter ( where varsel_lest is true) as leste_varsler,
-                        count(*) filter ( where status_ekstern is not null) as bestilte_varsler,
-                        count(*) filter ( where status_ekstern='sendt') as sendte_varsler,
-                        count(*) filter ( where status_ekstern='feilet') as feilende_varsler
+                        count(*) filter ( where abq.ferdigstilt is not null) as ferdigstilte_varsler,
+                        count(*) filter ( where abq.varsel_lest is true) as leste_varsler,
+                        count(*) filter ( where abq.status_ekstern is not null) as bestilte_varsler,
+                        count(*) filter ( where abq.status_ekstern='sendt') as sendte_varsler,
+                        count(*) filter ( where abq.status_ekstern='feilet') as feilende_varsler
                     from alert_header as ah
                         left join alert_beskjed_queue as abq on ah.referenceId = abq.alert_ref
                     where ah.aktiv = :aktiv
-                    group by ah.referenceId
-                    order by opprettet desc
+                    group by ah.referenceId, ah.opprettet
+                    order by ah.opprettet desc
                 """,
                 mapOf("aktiv" to aktiv)
             ).map {row ->
@@ -75,11 +73,11 @@ class AlertRepository(private val database: Database) {
                     referenceId = row.string("referenceId"),
                     tekster = row.json("tekster"),
                     opprettet = row.zonedDateTime("opprettet"),
-                    opprettetAv = row.json("opprettetAv", objectMapper),
+                    opprettetAv = row.json("opprettetAv"),
                     aktiv = row.boolean("aktiv"),
                     mottakere = row.int("mottakere"),
                     avsluttet = row.zonedDateTimeOrNull("avsluttet"),
-                    avsluttetAv = if (aktiv) null else row.json("avsluttetAv", objectMapper),
+                    avsluttetAv = if (aktiv) null else row.json("avsluttetAv"),
                     varselStatus = VarselStatus(
                         antallLesteVarsler = row.int("leste_varsler"),
                         antallFerdigstilteVarsler = row.int("ferdigstilte_varsler"),
@@ -90,7 +88,7 @@ class AlertRepository(private val database: Database) {
                         )
                     )
                 )
-            }.asList
+            }
         }
     }
 
@@ -100,14 +98,14 @@ class AlertRepository(private val database: Database) {
                 "insert into alert_header(referenceId, tekster, opprettet, opprettetAv) values(:referenceId, :tekster, :opprettet, :opprettetAv)",
                 mapOf(
                     "referenceId" to createAlert.referenceId,
-                    "tekster" to createAlert.tekster.toJsonb(objectMapper),
-                    "opprettetAv" to createAlert.opprettetAv.toJsonb(objectMapper),
+                    "tekster" to createAlert.tekster.toJsonb(),
+                    "opprettetAv" to createAlert.opprettetAv.toJsonb(),
                     "opprettet" to nowAtUtcZ()
                 )
             )
         }
 
-        database.batch(
+        database.batchUpdate(
             "insert into alert_beskjed_queue(alert_ref, ident, opprettet) values(:referenceId, :ident, :opprettet) on conflict do nothing",
             createAlert.mottakere.map {
                 mapOf(
@@ -126,7 +124,7 @@ class AlertRepository(private val database: Database) {
                 mapOf(
                     "referenceId" to referenceId,
                     "avsluttet" to nowAtUtcZ(),
-                    "avsluttetAv" to actor.toJsonb(objectMapper)
+                    "avsluttetAv" to actor.toJsonb()
                 )
             )
         }
@@ -147,11 +145,11 @@ class AlertRepository(private val database: Database) {
                 VarselRequest(
                     referenceId = it.string("alert_ref"),
                     ident = it.string("ident"),
-                    beskjed = it.json("beskjed", objectMapper),
-                    eksternTekst = it.json("eksternTekst", objectMapper),
+                    beskjed = it.json("beskjed"),
+                    eksternTekst = it.json("eksternTekst"),
                     tittel = it.string("tittel")
                 )
-            }.asList
+            }
         }
     }
 
@@ -179,7 +177,7 @@ class AlertRepository(private val database: Database) {
                     "referenceId" to referenceId,
                     "ferdigstilt" to nowAtUtcZ(),
                     "status" to BeskjedStatus.Feilet.dbName,
-                    "feilkilde" to feilkilde.toJsonb(objectMapper)
+                    "feilkilde" to feilkilde.toJsonb()
                 )
             )
         }
@@ -206,7 +204,7 @@ class AlertRepository(private val database: Database) {
                 mapOf("varselId" to varselId)
             ).map {
                 it.stringOrNull("status_ekstern")
-            }.asSingle
+            }
         }
 
         database.update {
@@ -242,7 +240,7 @@ class AlertRepository(private val database: Database) {
                         antallFeilet = row.int("feilende_varsler")
                     )
                 )
-            }.asSingle
+            }
         } ?: throw VarslerNotFoundException(alertRefId)
 }
 

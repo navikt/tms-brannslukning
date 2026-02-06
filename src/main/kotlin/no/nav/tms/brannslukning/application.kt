@@ -9,8 +9,7 @@ import no.nav.tms.brannslukning.alert.EksterntVarselStatusSubscriber
 import no.nav.tms.brannslukning.alert.VarselInaktivertSubscriber
 import no.nav.tms.brannslukning.alert.VarselPusher
 import no.nav.tms.brannslukning.gui.gui
-import no.nav.tms.brannslukning.setup.database.Flyway
-import no.nav.tms.brannslukning.setup.database.PostgresDatabase
+import no.nav.tms.common.postgres.Postgres
 import no.nav.tms.kafka.application.KafkaApplication
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -18,19 +17,20 @@ import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.config.SslConfigs
 import org.apache.kafka.common.serialization.StringSerializer
+import org.flywaydb.core.Flyway
 import java.util.*
 
 fun main() {
-    val alertRepository = AlertRepository(PostgresDatabase())
-
-    if (Environment.isDevMode) {
-        startDevServer(alertRepository)
+    if (Environment.isDevMode()) {
+        startDevServer()
     } else {
-        startKafkaApplication(alertRepository)
+        startKafkaApplication()
     }
 }
 
-private fun startDevServer(alertRepository: AlertRepository) {
+private fun startDevServer() {
+    val database = Postgres.connectToJdbcUrl(Environment.jdbcUrl())
+
     embeddedServer(
         Netty,
         configure = {
@@ -39,23 +39,26 @@ private fun startDevServer(alertRepository: AlertRepository) {
             }
         },
         module = {
-            gui(alertRepository)
+            gui(AlertRepository(database))
             monitor.subscribe(ApplicationStarted) {
-                Flyway.runFlywayMigrations()
+                Flyway.configure()
+                    .dataSource(database.dataSource)
+                    .load()
+                    .migrate()
             }
         }
     ).start(wait = true)
 }
 
-private fun startKafkaApplication(alertRepository: AlertRepository) {
-    val environment = Environment()
+private fun startKafkaApplication() {
+    val database = Postgres.connectToJdbcUrl(Environment.jdbcUrl())
 
-
+    val alertRepository = AlertRepository(database)
     val kafkaProducer = initializeKafkaProducer()
     val varselPusher = VarselPusher(
         alertRepository = alertRepository,
         kafkaProducer = kafkaProducer,
-        varselTopic = environment.varselTopic
+        varselTopic = Environment.varselTopic
     )
 
     KafkaApplication.build {
@@ -64,8 +67,8 @@ private fun startKafkaApplication(alertRepository: AlertRepository) {
         }
 
         kafkaConfig {
-            groupId = environment.groupId
-            readTopic(environment.readVarselTopic)
+            groupId = Environment.groupId
+            readTopic(Environment.readVarselTopic)
         }
         subscribers(
             VarselInaktivertSubscriber(alertRepository),
@@ -73,9 +76,16 @@ private fun startKafkaApplication(alertRepository: AlertRepository) {
         )
 
         onStartup {
-            Flyway.runFlywayMigrations()
+            Flyway.configure()
+                .dataSource(database.dataSource)
+                .load()
+                .migrate()
+        }
+
+        onReady {
             varselPusher.start()
         }
+
         onShutdown {
             runBlocking {
                 varselPusher.stop()

@@ -9,7 +9,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.testing.*
 import io.ktor.utils.io.*
 import no.nav.tms.brannslukning.alert.AlertRepository
-import no.nav.tms.brannslukning.alert.setup.database.LocalPostgresDatabase
+import no.nav.tms.brannslukning.alert.setup.database.LocalTestDatabase
 import no.nav.tms.brannslukning.gui.BeredskapvarselCache
 import no.nav.tms.brannslukning.gui.gui
 import no.nav.tms.token.support.azure.validation.mock.azureMock
@@ -18,11 +18,11 @@ import org.junit.jupiter.api.Test
 
 class OpprettBeredskapsvarselTest {
 
-    private val database = LocalPostgresDatabase.cleanDb()
+    private val database = LocalTestDatabase.getInstance()
 
     @AfterEach
     fun cleandb() {
-        database.clearTables()
+        LocalTestDatabase.resetInstance()
         BeredskapvarselCache.clearCache()
     }
 
