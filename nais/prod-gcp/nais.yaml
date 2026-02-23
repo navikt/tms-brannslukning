@@ -13,7 +13,7 @@ spec:
     initialDelay: 30
   readiness:
     path: /isready
-    initialDelay: 5
+    initialDelay: 15
   ingresses:
     - "https://beredskapsvarsel.intern.nav.no"
     - "https://beredskapsvarsel.ansatt.nav.no"

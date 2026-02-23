@@ -13,7 +13,7 @@ spec:
     initialDelay: 30
   readiness:
     path: /isready
-    initialDelay: 5
+    initialDelay: 15
   ingresses:
     - "https://tms-brannslukning.intern.dev.nav.no"
     - "https://tms-brannslukning.ansatt.dev.nav.no"
