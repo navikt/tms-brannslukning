@@ -103,6 +103,9 @@ fun Application.gui(
     routing {
         meta()
         authenticate {
+            get("/debug") {
+                call.respondText(call.principal<AzurePrincipal>()!!.decodedJWT.token)
+            }
             startPage(alertRepository)
             opprettBeredskapvarsel(alertRepository)
             detaljerBeredskapvarsel(alertRepository)
