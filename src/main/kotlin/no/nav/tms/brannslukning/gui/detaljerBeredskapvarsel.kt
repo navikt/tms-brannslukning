@@ -1,7 +1,6 @@
 package no.nav.tms.brannslukning.gui
 
 import VarselStatus
-import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import kotlinx.html.*
 import no.nav.tms.brannslukning.alert.AlertRepository
@@ -42,6 +41,7 @@ fun Route.detaljerBeredskapvarsel(alertRepository: AlertRepository) {
             val id = call.parameters["id"] ?: throw IllegalArgumentException("hendelseid må være tilstede i path")
             val hendelse =
                 alertRepository.fetchHendelse(id) ?: throw IllegalArgumentException("Fant ikke hendelse med id $id")
+
             alertRepository.endAlert(hendelse.id, call.user)
             BeredskapvarselCache.invalidateHendelse(hendelse.id)
 

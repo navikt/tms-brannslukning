@@ -2,7 +2,6 @@ package no.nav.tms.brannslukning.gui
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.content.*
-import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.utils.io.*

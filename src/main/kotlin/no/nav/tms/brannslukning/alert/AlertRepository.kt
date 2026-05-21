@@ -9,6 +9,7 @@ import no.nav.tms.brannslukning.gui.VarslerNotFoundException
 import no.nav.tms.common.postgres.JsonbHelper.json
 import no.nav.tms.common.postgres.JsonbHelper.toJsonb
 import no.nav.tms.common.postgres.PostgresDatabase
+import no.nav.tms.token.support.entraid.token.verification.EntraIdUserPrincipal
 import java.time.ZoneId
 import java.time.ZonedDateTime
 

@@ -11,15 +11,16 @@ import io.ktor.server.routing.*
 import kotlinx.html.*
 import no.nav.tms.brannslukning.alert.AlertRepository
 import no.nav.tms.common.logging.TeamLogs
-import no.nav.tms.token.support.azure.validation.AzurePrincipal
-import no.nav.tms.token.support.azure.validation.azure
+import no.nav.tms.token.support.entraid.token.verification.EntraIdUserPrincipal
+import no.nav.tms.token.support.entraid.token.verification.entraId
+import java.lang.IllegalStateException
 
 fun Application.gui(
     alertRepository: AlertRepository,
     authInstaller: Application.() -> Unit = {
         authentication {
-            azure {
-                setAsDefault = true
+            entraId {
+
             }
         }
     }
@@ -123,11 +124,6 @@ fun Routing.meta() {
 }
 
 
-val ApplicationCall.user
-    get() = principal<AzurePrincipal>()?.let {
-        User(
-            oid = it.decodedJWT.getClaim("oid").toString(),
-            username = it.decodedJWT.getClaim("preferred_username").toString().removeSurrounding("\"")
-        )
-    } ?: throw IllegalStateException("Må være innlogget")
-
+val ApplicationCall.user get() = principal<EntraIdUserPrincipal>()?.let {
+    User(it.userName, it.userId)
+} ?: throw IllegalStateException("Fant ikke EntraIdUserPrincipal i context")

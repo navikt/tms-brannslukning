@@ -10,6 +10,7 @@ import no.nav.tms.brannslukning.alert.VarselInaktivertSubscriber
 import no.nav.tms.brannslukning.alert.VarselPusher
 import no.nav.tms.brannslukning.gui.gui
 import no.nav.tms.common.postgres.Postgres
+import no.nav.tms.kafka.application.Domain
 import no.nav.tms.kafka.application.KafkaApplication
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.producer.KafkaProducer
@@ -92,6 +93,12 @@ private fun startKafkaApplication() {
                 kafkaProducer.flush()
                 kafkaProducer.close()
             }
+        }
+
+        minSideMdc {
+            domain = Domain.varsel
+            idFieldName = "varselId"
+            producedByFieldName = "appnavn"
         }
     }.start()
 }
