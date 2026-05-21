@@ -12,7 +12,8 @@ import no.nav.tms.brannslukning.alert.AlertRepository
 import no.nav.tms.brannslukning.alert.setup.database.LocalTestDatabase
 import no.nav.tms.brannslukning.gui.BeredskapvarselCache
 import no.nav.tms.brannslukning.gui.gui
-import no.nav.tms.token.support.azure.validation.mock.azureMock
+import no.nav.tms.token.support.entraid.token.verification.mock.UserInfo
+import no.nav.tms.token.support.entraid.token.verification.mock.entraIdMock
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 
@@ -53,16 +54,21 @@ class OpprettBeredskapsvarselTest {
             }
     }
 
-    @KtorDsl
     fun apiTest(testBlock: suspend ApplicationTestBuilder.() -> Unit) = testApplication {
         application {
             gui(
                 alertRepository = AlertRepository(database),
                 authInstaller = {
                     authentication {
-                        azureMock {
-                            setAsDefault = true
-                            alwaysAuthenticated = true
+                        entraIdMock {
+                            enableDefaultAuthentication {
+                                tokenUserInfo = UserInfo(
+                                    navIdent = "U0001",
+                                    userId = "12345",
+                                    userName = "user@name.no",
+                                    displayName = "Name Namesson"
+                                )
+                            }
                         }
                     }
                 }

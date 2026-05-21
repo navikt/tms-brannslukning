@@ -93,6 +93,11 @@ private fun startKafkaApplication() {
                 kafkaProducer.close()
             }
         }
+
+        minSideMdc {
+            idFieldName = "varselId"
+            producedByFieldName = "appnavn"
+        }
     }.start()
 }
 
