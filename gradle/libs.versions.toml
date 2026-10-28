@@ -1,0 +1,4 @@
+[libraries]
+caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version = "3.2.3" }
+tms-varsel-builder = {group="no.nav.tms.varsel", name = "kotlin-builder", version="1.0.4"}
+

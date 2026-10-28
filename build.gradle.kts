@@ -1,12 +1,8 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 plugins {
-    // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
-    kotlin("jvm").version(Kotlin.version)
-
-    id(TmsJarBundling.plugin)
-
-    // Apply the application plugin to add support for building a CLI application.
+    kotlin("jvm").version(managed.versions.kotlin)
+    alias(managed.plugins.tms.jarBundling)
     application
 }
 
@@ -26,42 +22,32 @@ repositories {
 }
 
 dependencies {
-    implementation(Flyway.core)
-    implementation(Flyway.postgres)
-    implementation(Hikari.cp)
-    implementation(Caffeine.caffeine)
-    implementation(JacksonDatatype.datatypeJsr310)
-    implementation(JacksonDatatype.moduleKotlin)
-    implementation(Kafka.clients)
-    implementation(KotliQuery.kotliquery)
-    implementation(KotlinLogging.logging)
-    implementation(Ktor.Server.core)
-    implementation(Ktor.Server.netty)
-    implementation(Ktor.Server.htmlDsl)
-    implementation(Ktor.Server.statusPages)
-    implementation(Ktor.Server.auth)
-    implementation(Ktor.Server.authJwt)
-    implementation(Ktor.Client.contentNegotiation)
-    implementation(Ktor.Client.apache5)
-    implementation(Ktor.Serialization.jackson)
-    implementation(Logstash.logbackEncoder)
-    implementation(Postgresql.postgresql)
-    implementation(TmsCommonLib.postgres)
-    implementation(TmsCommonLib.teamLogger)
-    implementation(TmsCommonLib.utils)
-    implementation(TmsVarselBuilder.kotlinBuilder)
-    implementation(TmsKtorTokenSupport.entraIdTokenVerification)
-    implementation(TmsKafkaTools.kafkaApplication)
 
-    testImplementation(JunitPlatform.launcher)
-    testImplementation(JunitJupiter.api)
-    testImplementation(JunitJupiter.engine)
-    testImplementation(Mockk.mockk)
-    testImplementation(Ktor.Test.serverTestHost)
-    testImplementation(TestContainers.postgresql)
-    testImplementation(Kotest.runnerJunit5)
-    testImplementation(Kotest.assertionsCore)
-    testImplementation(TmsKtorTokenSupport.entraIdTokenVerificationMock)
+    implementation(managed.bundles.database)
+    implementation(managed.tms.commonLib.postgres)
+    implementation(managed.kotliQuery)
+    implementation(managed.kafka.clients)
+    implementation(managed.kotlinLogging)
+    implementation(managed.bundles.ktorServer)
+    implementation(managed.ktor.server.html)
+    implementation(managed.bundles.ktorClient)
+    implementation(managed.ktor.serialization.jackson)
+    implementation(managed.bundles.jackson)
+    implementation(managed.logback.encoder)
+    implementation(managed.tms.commonLib.teamLogger)
+    implementation(managed.tms.commonLib.utils)
+    implementation(managed.tms.kafka.application)
+    implementation(managed.tms.ktorTokenSupport.entraId.verification)
+
+    implementation(libs.tms.varsel.builder)
+    implementation(libs.caffeine)
+
+    testImplementation(managed.bundles.junit)
+    testImplementation(managed.mockk)
+    testImplementation(managed.bundles.testContainers)
+    testImplementation(managed.ktor.test.server)
+    testImplementation(managed.bundles.kotest)
+    testImplementation(managed.tms.ktorTokenSupport.entraId.verificationMock)
 }
 
 application {
